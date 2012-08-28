@@ -5,6 +5,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.shell.PathExceptions.PathNotFoundException;
@@ -25,6 +27,9 @@ public class Find extends FsCommand {
 	  private int argCnt;
 	  private int preDepth=0;
 	  private String[] expr;
+
+	  
+	  
 	  protected int maxRepl = 3, maxLen = 10, maxOwner = 0, maxGroup = 0;
 	  protected String lineFormat;
 	  protected boolean dirRecurse;
@@ -53,8 +58,8 @@ public class Find extends FsCommand {
 	    	 setRecursive(dirRecurse);
 	    	 argCnt=args.size()-1;
 	    	 
+	    	 //Calculate preDepth
 	    	 String argPath = args.get(0);
-	    	 
 	    	 StringTokenizer stk = new StringTokenizer(argPath,"/");
 	    	 preDepth=stk.countTokens();	
 	    	 
@@ -62,6 +67,9 @@ public class Find extends FsCommand {
 	    	 for(int i=0; i<(args.size()-1); i++){
 	    		 expr[i] = args.get(i+1);
 	    	 }
+	    	 
+	    	
+	    	 
 		     break;
 	      default:
 	        throw new IllegalArgumentException("Only one find flag is allowed");
@@ -92,7 +100,17 @@ public class Find extends FsCommand {
 	  protected void processPath(PathData item) throws IOException {
 	   if(flag.equals("name")){
 		   FileStatus stat = item.stat;
-			   if(item.toString().contains(expr[0])){
+		       String tmpString = item.toString();
+		  	   
+		       //extract compareString
+		       int tmpNum = tmpString.lastIndexOf("/");
+		       tmpString = tmpString.substring(tmpNum+1);
+		       
+		       //Java Regular Expression Matching
+		       Pattern pt = Pattern.compile(expr[0]);
+		       Matcher m = pt.matcher(tmpString);
+		   
+			   if(m.matches()){
 			    	String line = String.format(lineFormat,
 			    	        (stat.isDirectory() ? "d" : "-"),
 			    	        stat.getPermission(),
