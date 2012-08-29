@@ -56,9 +56,9 @@ public class Find extends FsCommand {
 		
 		String argPath = args.toString();
 		StringTokenizer stk = new StringTokenizer(argPath,"/");
-		preDepth=stk.countTokens();
+		preDepth=stk.countTokens()-1;
 	
-		dirRecurse = true;
+		dirRecurse = !cf.getOpt("d");
 		setRecursive(dirRecurse);
 	  }
 	  
@@ -100,6 +100,8 @@ public class Find extends FsCommand {
 	    
 	  @Override
 	  protected void processPath(PathData item) {
+		  //
+		  
 		if(optionsForFind.containsKey("name")){
 		   FileStatus stat = item.stat;
 		   	
@@ -139,7 +141,7 @@ public class Find extends FsCommand {
 	     else if(optionsForFind.containsKey("maxdepth")){
 	    	FileStatus stat = item.stat;
 	    	int setDepth=new Integer(optionsForFind.get("maxdepth"));
-	    	//System.out.println("setDepth: "+setDepth);
+	    	System.out.println("setDepth: "+setDepth);
 	    	String tmpPath = item.toString();
 	    	
 	    	//Count depth
@@ -147,8 +149,8 @@ public class Find extends FsCommand {
 	    	int tmpDepth=stk.countTokens();	
 
 	    	//Add tmpDepth
-	    	tmpDepth=tmpDepth+preDepth;	
-	    	
+	    	tmpDepth=tmpDepth+preDepth-1;	
+	    	System.out.println("tmpDepth: "+tmpDepth);
 	    	
 	    	String tmpString = item.toString(); 	       
 		    int tmpNum = tmpString.lastIndexOf("/");
