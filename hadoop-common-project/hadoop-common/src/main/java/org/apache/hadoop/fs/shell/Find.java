@@ -29,7 +29,6 @@ public class Find extends FsCommand {
 	  private boolean findflag = true;
 	  private String flag;
 	  private int preDepth=0;
-	  private String[] expr;
   
 	  protected int maxRepl = 3, maxLen = 10, maxOwner = 0, maxGroup = 0;
 	  protected String lineFormat;
@@ -51,7 +50,14 @@ public class Find extends FsCommand {
 										"print", "depth", "owner", "group", "perm", "maxdepth", "size");
 		cf.parseForFind(args);
 		optionsForFind = cf.getOptionsForFind();
+		
+		String argPath = args.toString();
+		StringTokenizer stk = new StringTokenizer(argPath,"/");
+		preDepth=stk.countTokens();
+		
 		if (args.isEmpty()) args.add(Path.CUR_DIR);
+		dirRecurse = true;
+		setRecursive(dirRecurse);
 	  }
 	  
 	  @Override
