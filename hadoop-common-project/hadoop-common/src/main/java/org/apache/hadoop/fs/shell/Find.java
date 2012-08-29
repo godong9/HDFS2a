@@ -51,11 +51,13 @@ public class Find extends FsCommand {
 		cf.parseForFind(args);
 		optionsForFind = cf.getOptionsForFind();
 		
+		if (args.isEmpty()) 
+			args.add(Path.CUR_DIR);
+		
 		String argPath = args.toString();
 		StringTokenizer stk = new StringTokenizer(argPath,"/");
 		preDepth=stk.countTokens();
-		
-		if (args.isEmpty()) args.add(Path.CUR_DIR);
+	
 		dirRecurse = true;
 		setRecursive(dirRecurse);
 	  }
@@ -100,11 +102,14 @@ public class Find extends FsCommand {
 	  protected void processPath(PathData item) {
 		if(optionsForFind.containsKey("name")){
 		   FileStatus stat = item.stat;
-		       String tmpString = item.toString(); 	       
+		   	
+		       String tmpString = item.toString(); 	
+		       //System.out.println("tmpString:"+tmpString);
 		       int tmpNum = tmpString.lastIndexOf("/");
 		       tmpString = tmpString.substring(tmpNum+1);       
 		       //Java Regular Expression Matching
 		       String optString = optionsForFind.get("name").toString();
+		       //System.out.println("optString:"+optString);
 		       Pattern pt = Pattern.compile(optString);
 		       Matcher m = pt.matcher(tmpString);
 		   
