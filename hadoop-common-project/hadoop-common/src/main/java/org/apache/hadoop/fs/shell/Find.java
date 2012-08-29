@@ -146,8 +146,9 @@ public class Find extends FsCommand {
 	    	StringTokenizer stk = new StringTokenizer(tmpPath,"/");
 	    	int tmpDepth=stk.countTokens();	
 
-	    	//Add preDepth
-	    	setDepth=setDepth+preDepth;	
+	    	//Add tmpDepth
+	    	tmpDepth=tmpDepth+preDepth;	
+	    	
 	    	
 	    	String tmpString = item.toString(); 	       
 		    int tmpNum = tmpString.lastIndexOf("/");
