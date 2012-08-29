@@ -139,6 +139,7 @@ public class Find extends FsCommand {
 	     else if(optionsForFind.containsKey("maxdepth")){
 	    	FileStatus stat = item.stat;
 	    	int setDepth=new Integer(optionsForFind.get("maxdepth"));
+	    	//System.out.println("setDepth: "+setDepth);
 	    	String tmpPath = item.toString();
 	    	
 	    	//Count depth
@@ -152,12 +153,12 @@ public class Find extends FsCommand {
 		    int tmpNum = tmpString.lastIndexOf("/");
 		    tmpString = tmpString.substring(tmpNum+1);       
 		    //Java Regular Expression Matching
-		    String optString = optionsForFind.get("maxdepth").toString();
-		    Pattern pt = Pattern.compile(optString);
-		    Matcher m = pt.matcher(tmpString);
+	
+		    //Pattern pt = Pattern.compile(optString);
+		    //Matcher m = pt.matcher(tmpString);
 	    	
 	    	if(tmpDepth<=setDepth){	
-			   if(m.lookingAt()){
+			   //if(m.lookingAt()){
 			    	String line = String.format(lineFormat,
 			    	        (stat.isDirectory() ? "d" : "-"),
 			    	        stat.getPermission(),
@@ -169,7 +170,7 @@ public class Find extends FsCommand {
 			    	        item
 			    	   );
 			    	   System.out.println(line);
-			    }
+			    //}
 	    	}
 	        exitCode = 1;
 	     }
