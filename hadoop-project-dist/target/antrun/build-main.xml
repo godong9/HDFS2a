@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main" if="tar">
+  <echo file="/home/godong/Project/HDFS2a/hadoop-project-dist/target/dist-maketar.sh">which cygpath 2&gt; /dev/null
+                      if [ $? = 1 ]; then
+                        BUILD_DIR=&quot;/home/godong/Project/HDFS2a/hadoop-project-dist/target&quot;
+                      else
+                        BUILD_DIR=`cygpath --unix &apos;/home/godong/Project/HDFS2a/hadoop-project-dist/target&apos;`
+                      fi
+                      cd ${BUILD_DIR}
+                      tar czf hadoop-project-dist-2.0.1-SNAPSHOT.tar.gz hadoop-project-dist-2.0.1-SNAPSHOT</echo>
+  <exec dir="/home/godong/Project/HDFS2a/hadoop-project-dist/target" executable="sh" failonerror="true">
+    <arg line="./dist-maketar.sh"/>
+  </exec>
+</target>
+</project>

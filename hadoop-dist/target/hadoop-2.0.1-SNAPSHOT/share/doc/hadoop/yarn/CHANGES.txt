@@ -1,0 +1,66 @@
+Hadoop MapReduce Change Log
+
+Trunk (unreleased changes)
+
+  INCOMPATIBLE CHANGES
+
+  NEW FEATURES
+
+  IMPROVEMENTS
+
+  BUG FIXES
+
+Branch-2 ( Unreleased changes )
+
+  INCOMPATIBLE CHANGES
+
+  NEW FEATURES
+
+  IMPROVEMENTS
+
+  BUG FIXES
+
+    YARN-13. Fix pom versions for YARN in branch-2 (todd)
+
+    MAPREDUCE-2374. "Text File Busy" errors launching MR tasks. (Andy Isaacson
+    via atm)
+
+Release 2.1.0-alpha - Unreleased 
+
+  INCOMPATIBLE CHANGES
+
+  NEW FEATURES
+
+    YARN-1. Promote YARN to be a sub-project of Apache Hadoop. (acmurthy)
+
+  IMPROVEMENTS
+
+  BUG FIXES
+
+    YARN-12. Fix findbugs warnings in FairScheduler. (Junping Du via acmurthy) 
+
+    YARN-22. Fix ContainerLogs to work if the log-dir is specified as a URI.
+    (Mayank Bansal via sseth)
+
+Release 0.23.3 - Unreleased 
+
+  INCOMPATIBLE CHANGES
+
+  NEW FEATURES
+
+  IMPROVEMENTS
+
+  BUG FIXES
+
+    YARN-14. Symlinks to peer distributed cache files no longer work 
+    (Jason Lowe via bobby) 
+
+    YARN-25. remove old aggregated logs  (Robert Evans via tgraves)
+
+    YARN-27. Failed refreshQueues due to misconfiguration prevents further 
+    refreshing of queues (Arun Murthy via tgraves)
+
+    MAPREDUCE-4323. NM leaks filesystems (Jason Lowe via jeagles)
+    
+    YARN-39. RM-NM secret-keys should be randomly generated and rolled every
+    so often. (vinodkv and sseth via sseth)

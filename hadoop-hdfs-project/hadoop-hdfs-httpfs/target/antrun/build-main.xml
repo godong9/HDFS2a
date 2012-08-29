@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main" if="tar">
+  <echo file="/home/godong/Project/HDFS2a/hadoop-hdfs-project/hadoop-hdfs-httpfs/target/dist-maketar.sh">which cygpath 2&gt; /dev/null
+                      if [ $? = 1 ]; then
+                      BUILD_DIR=&quot;/home/godong/Project/HDFS2a/hadoop-hdfs-project/hadoop-hdfs-httpfs/target&quot;
+                      else
+                      BUILD_DIR=`cygpath --unix &apos;/home/godong/Project/HDFS2a/hadoop-hdfs-project/hadoop-hdfs-httpfs/target&apos;`
+                      fi
+                      cd $BUILD_DIR
+                      tar czf hadoop-hdfs-httpfs-2.0.1-SNAPSHOT.tar.gz hadoop-hdfs-httpfs-2.0.1-SNAPSHOT</echo>
+  <exec dir="/home/godong/Project/HDFS2a/hadoop-hdfs-project/hadoop-hdfs-httpfs/target" executable="sh" failonerror="true">
+    <arg line="./dist-maketar.sh"/>
+  </exec>
+</target>
+</project>

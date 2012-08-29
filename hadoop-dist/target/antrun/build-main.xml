@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main" if="tar">
+  <echo file="/home/godong/Project/HDFS2a/hadoop-dist/target/dist-tar-stitching.sh">run() {
+                        echo &quot;\$ ${@}&quot;
+                        &quot;${@}&quot;
+                        res=$?
+                        if [ $res != 0 ]; then
+                          echo
+                          echo &quot;Failed!&quot;
+                          echo
+                          exit $res
+                        fi
+                      }
+
+                      run tar czf hadoop-2.0.1-SNAPSHOT.tar.gz hadoop-2.0.1-SNAPSHOT
+                      echo
+                      echo &quot;Hadoop dist tar available at: /home/godong/Project/HDFS2a/hadoop-dist/target/hadoop-2.0.1-SNAPSHOT.tar.gz&quot;
+                      echo</echo>
+  <exec dir="/home/godong/Project/HDFS2a/hadoop-dist/target" executable="sh" failonerror="true">
+    <arg line="./dist-tar-stitching.sh"/>
+  </exec>
+</target>
+</project>

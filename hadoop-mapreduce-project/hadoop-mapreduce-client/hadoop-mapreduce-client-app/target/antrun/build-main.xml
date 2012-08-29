@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main">
+  <symlink link="/home/godong/Project/HDFS2a/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-app/target/hadoop-mapreduce-client-app.jar" resource="mr-app.jar" failonerror="false"/>
+  <symlink link="/home/godong/Project/HDFS2a/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-app/target/hadoop-mapreduce-client-app-2.0.1-SNAPSHOT.jar" resource="mr-app.jar" failonerror="false"/>
+</target>
+</project>
