@@ -43,7 +43,8 @@ public class Find extends FsCommand {
 	  
 	  @Override
 	  protected void processOptions(LinkedList<String> args) {
-		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "maxdepth", "size");
+		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "type", "perm", 
+				"maxdepth", "size");
 	    cf.parse(args); 
 	    String[] opts = cf.getOpts().toArray(new String[0]);
 	    switch (opts.length) {
@@ -107,7 +108,7 @@ public class Find extends FsCommand {
 	    
 	  @Override
 	  protected void processPath(PathData item) {
-	   if(flag.equals("name")){
+	    if(flag.equals("name")){
 		   FileStatus stat = item.stat;
 		       String tmpString = item.toString(); 	       
 		       int tmpNum = tmpString.lastIndexOf("/");
@@ -130,8 +131,16 @@ public class Find extends FsCommand {
 			    	   System.out.println(line);
 			    }
 	       exitCode = 1;
-	    }
-	    else if(flag.equals("maxdepth")){
+	     }
+	     else if(flag.equals("type")){
+		   
+	       exitCode = 1;
+	     }
+	     else if(flag.equals("perm")){
+			  
+		   exitCode = 1;
+		 }
+	     else if(flag.equals("maxdepth")){
 	    	FileStatus stat = item.stat;
 	    	int setDepth=new Integer(expr[1]);
 	    	String tmpPath = item.toString();
@@ -165,17 +174,17 @@ public class Find extends FsCommand {
 			    	   System.out.println(line);
 			    }
 	    	}
-	       exitCode = 1;
-	    }
-	    else if(flag.equals("size")){
+	        exitCode = 1;
+	     }
+	     else if(flag.equals("size")){
 	        System.out.println(String.format("Find size"));
 	        exitCode = 1;
-	    }
-	    else{
+	     }
+	     else{
 	    	System.out.println(String.format("Flag Input Error!"));
 	    	findflag=false;
-	    }
-	    if (!findflag) exitCode = 1;
+	     }
+	     if (!findflag) exitCode = 1;
 	  }
 	   
 	  private void adjustColumnWidths(PathData items[]) {
