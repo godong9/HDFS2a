@@ -4,14 +4,17 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.shell.PathExceptions.PathNotFoundException;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hadoop.fs.Path;
 
 public class Find extends FsCommand {
 	  
@@ -20,12 +23,11 @@ public class Find extends FsCommand {
 	  }
 
 	  public static final String NAME = "find";
-	  public static final String USAGE = "[option] [path] [filename] [option2]";
+	  public static final String USAGE = "[path...] [expression]";
 	  public static final String DESCRIPTION = "Find command\n";
 
 	  private boolean findflag = true;
 	  private String flag;
-	  private int argCnt;
 	  private int preDepth=0;
 	  private String[] expr;
   
@@ -33,6 +35,8 @@ public class Find extends FsCommand {
 	  protected String lineFormat;
 	  protected boolean dirRecurse;
 	  protected boolean humanReadable = false;
+	  protected Map<String, String> optionsForFind = new HashMap<String, String>();
+	  
 	  protected static final SimpleDateFormat dateFormat = 
 			    new SimpleDateFormat("yyyy-MM-dd HH:mm");  
 	  protected String formatSize(long size) {
@@ -43,31 +47,11 @@ public class Find extends FsCommand {
 	  
 	  @Override
 	  protected void processOptions(LinkedList<String> args) {
-		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "type", "perm", 
-				"maxdepth", "size");
-	    cf.parse(args); 
-	    String[] opts = cf.getOpts().toArray(new String[0]);
-	    switch (opts.length) {
-	      case 0:
-	        throw new IllegalArgumentException("No find flag given");
-	      case 1:
-	    	 flag = opts[0];
-	    	 dirRecurse = !cf.getOpt("d");	//Recurse Check
-	    	 setRecursive(dirRecurse);
-	    	 argCnt=args.size()-1;
-	    	 //Calculate preDepth
-	    	 String argPath = args.get(0);
-	    	 StringTokenizer stk = new StringTokenizer(argPath,"/");
-	    	 preDepth=stk.countTokens();	
-	  	 
-	    	 expr=new String[argCnt];
-	    	 for(int i=0; i<(args.size()-1); i++){
-	    		 expr[i] = args.get(i+1);
-	    	 }	 
-		     break;
-	      default:
-	        throw new IllegalArgumentException("Only one find flag is allowed");
-	    }
+		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "type", "atime", "ctime", "mtime", 
+										"print", "depth", "owner", "group", "perm", "maxdepth", "size");
+		cf.parseForFind(args);
+		optionsForFind = cf.getOptionsForFind();
+		if (args.isEmpty()) args.add(Path.CUR_DIR);
 	  }
 	  
 	  @Override
@@ -108,13 +92,14 @@ public class Find extends FsCommand {
 	    
 	  @Override
 	  protected void processPath(PathData item) {
-	    if(flag.equals("name")){
+		if(optionsForFind.containsKey("name")){
 		   FileStatus stat = item.stat;
 		       String tmpString = item.toString(); 	       
 		       int tmpNum = tmpString.lastIndexOf("/");
 		       tmpString = tmpString.substring(tmpNum+1);       
 		       //Java Regular Expression Matching
-		       Pattern pt = Pattern.compile(expr[0]);
+		       String optString = optionsForFind.get("name").toString();
+		       Pattern pt = Pattern.compile(optString);
 		       Matcher m = pt.matcher(tmpString);
 		   
 			   if(m.lookingAt()){
@@ -132,17 +117,17 @@ public class Find extends FsCommand {
 			    }
 	       exitCode = 1;
 	     }
-	     else if(flag.equals("type")){
+	     else if(optionsForFind.containsKey("type")){
 		   
 	       exitCode = 1;
 	     }
-	     else if(flag.equals("perm")){
+	     else if(optionsForFind.containsKey("atime")){
 			  
 		   exitCode = 1;
 		 }
-	     else if(flag.equals("maxdepth")){
+	     else if(optionsForFind.containsKey("maxdepth")){
 	    	FileStatus stat = item.stat;
-	    	int setDepth=new Integer(expr[1]);
+	    	int setDepth=new Integer(optionsForFind.get("maxdepth"));
 	    	String tmpPath = item.toString();
 	    	
 	    	//Count depth
@@ -156,7 +141,8 @@ public class Find extends FsCommand {
 		    int tmpNum = tmpString.lastIndexOf("/");
 		    tmpString = tmpString.substring(tmpNum+1);       
 		    //Java Regular Expression Matching
-		    Pattern pt = Pattern.compile(expr[0]);
+		    String optString = optionsForFind.get("maxdepth").toString();
+		    Pattern pt = Pattern.compile(optString);
 		    Matcher m = pt.matcher(tmpString);
 	    	
 	    	if(tmpDepth<=setDepth){	
@@ -180,10 +166,7 @@ public class Find extends FsCommand {
 	        System.out.println(String.format("Find size"));
 	        exitCode = 1;
 	     }
-	     else{
-	    	System.out.println(String.format("Flag Input Error!"));
-	    	findflag=false;
-	     }
+		
 	     if (!findflag) exitCode = 1;
 	  }
 	   
