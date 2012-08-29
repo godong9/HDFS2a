@@ -109,8 +109,7 @@ public class Find extends FsCommand {
 	  protected void processPath(PathData item) {
 	   if(flag.equals("name")){
 		   FileStatus stat = item.stat;
-		       String tmpString = item.toString(); 
-		       //extract compareString
+		       String tmpString = item.toString(); 	       
 		       int tmpNum = tmpString.lastIndexOf("/");
 		       tmpString = tmpString.substring(tmpNum+1);       
 		       //Java Regular Expression Matching
@@ -144,8 +143,15 @@ public class Find extends FsCommand {
 	    	//Add preDepth
 	    	setDepth=setDepth+preDepth;	
 	    	
+	    	String tmpString = item.toString(); 	       
+		    int tmpNum = tmpString.lastIndexOf("/");
+		    tmpString = tmpString.substring(tmpNum+1);       
+		    //Java Regular Expression Matching
+		    Pattern pt = Pattern.compile(expr[0]);
+		    Matcher m = pt.matcher(tmpString);
+	    	
 	    	if(tmpDepth<=setDepth){	
-			   if(item.toString().contains(expr[0])){
+			   if(m.lookingAt()){
 			    	String line = String.format(lineFormat,
 			    	        (stat.isDirectory() ? "d" : "-"),
 			    	        stat.getPermission(),
