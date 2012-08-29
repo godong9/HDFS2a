@@ -2,12 +2,13 @@ package org.apache.hadoop.fs.shell;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.shell.PathExceptions.PathNotFoundException;
 import org.apache.hadoop.util.StringUtils;
@@ -33,8 +34,7 @@ public class Find extends FsCommand {
 	  protected boolean dirRecurse;
 	  protected boolean humanReadable = false;
 	  protected static final SimpleDateFormat dateFormat = 
-			    new SimpleDateFormat("yyyy-MM-dd HH:mm");
-	  
+			    new SimpleDateFormat("yyyy-MM-dd HH:mm");  
 	  protected String formatSize(long size) {
 		    return humanReadable
 		      ? StringUtils.humanReadableInt(size)
@@ -43,10 +43,9 @@ public class Find extends FsCommand {
 	  
 	  @Override
 	  protected void processOptions(LinkedList<String> args) {
-		 CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "maxdepth", "size");
+		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "maxdepth", "size");
 	    cf.parse(args); 
 	    String[] opts = cf.getOpts().toArray(new String[0]);
-	  
 	    switch (opts.length) {
 	      case 0:
 	        throw new IllegalArgumentException("No find flag given");
@@ -55,21 +54,30 @@ public class Find extends FsCommand {
 	    	 dirRecurse = !cf.getOpt("d");	//Recurse Check
 	    	 setRecursive(dirRecurse);
 	    	 argCnt=args.size()-1;
-	    	 
 	    	 //Calculate preDepth
 	    	 String argPath = args.get(0);
 	    	 StringTokenizer stk = new StringTokenizer(argPath,"/");
 	    	 preDepth=stk.countTokens();	
-	    	 
+	  	 
 	    	 expr=new String[argCnt];
 	    	 for(int i=0; i<(args.size()-1); i++){
 	    		 expr[i] = args.get(i+1);
-	    	 }
-	    	 
+	    	 }	 
 		     break;
 	      default:
 	        throw new IllegalArgumentException("Only one find flag is allowed");
 	    }
+	  }
+	  
+	  @Override
+	  protected List<PathData> expandArgument(String arg) throws IOException {
+		PathData[] items = PathData.expandAsGlob(arg, getConf());
+		/*
+		if (items.length == 0) {
+		// it's a glob that failed to match
+		  throw new PathNotFoundException(arg);
+		}*/
+		return Arrays.asList(items);
 	  }
 	  
 	  @Override
@@ -83,25 +91,28 @@ public class Find extends FsCommand {
 	  }
 	  
 	  @Override
+	  protected void processNonexistentPath(PathData item) throws IOException {
+		 if(!findflag){
+			 displayError(new PathNotFoundException(item.toString()));
+			 exitCode = 1;
+		 }
+	  }
+	 
+	  @Override
 	  protected void processPaths(PathData parent, PathData ... items)
 	  throws IOException {
-	    if (!isRecursive() && items.length != 0) {
-	      out.println("Found " + items.length + " items");
-	    }
 	    adjustColumnWidths(items);
 	    super.processPaths(parent, items);
 	  }
-	  
+	    
 	  @Override
-	  protected void processPath(PathData item) throws IOException {
+	  protected void processPath(PathData item) {
 	   if(flag.equals("name")){
 		   FileStatus stat = item.stat;
-		       String tmpString = item.toString();
-		  	   
+		       String tmpString = item.toString(); 
 		       //extract compareString
 		       int tmpNum = tmpString.lastIndexOf("/");
-		       tmpString = tmpString.substring(tmpNum+1);
-		       
+		       tmpString = tmpString.substring(tmpNum+1);       
 		       //Java Regular Expression Matching
 		       Pattern pt = Pattern.compile(expr[0]);
 		       Matcher m = pt.matcher(tmpString);
@@ -135,7 +146,6 @@ public class Find extends FsCommand {
 	    	
 	    	if(tmpDepth<=setDepth){	
 			   if(item.toString().contains(expr[0])){
-				   //System.out.println("item: "+item);
 			    	String line = String.format(lineFormat,
 			    	        (stat.isDirectory() ? "d" : "-"),
 			    	        stat.getPermission(),
@@ -161,15 +171,7 @@ public class Find extends FsCommand {
 	    }
 	    if (!findflag) exitCode = 1;
 	  }
-
-	  @Override
-	  protected void processNonexistentPath(PathData item) throws IOException {
-		 if(!findflag){
-			 displayError(new PathNotFoundException(item.toString()));
-			 exitCode = 1;
-		 }
-	  }
-	  
+	   
 	  private void adjustColumnWidths(PathData items[]) {
 		    for (PathData item : items) {
 		      FileStatus stat = item.stat;
