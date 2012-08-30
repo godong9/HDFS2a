@@ -31,6 +31,7 @@ import java.util.Set;
 public class CommandFormat {
   final int minPar, maxPar;
   final Map<String, Boolean> options = new HashMap<String, Boolean>();
+  final Map<String, String> optionsForFind = new HashMap<String, String>();
   boolean ignoreUnknownOpts = false;
   
   /**
@@ -114,6 +115,58 @@ public class CommandFormat {
     }
   }
   
+
+  public void parseForFind(List<String> args) {
+    int pos = 0;
+	int optionPos = -1;
+	String tmpOption = "";
+    while (pos < args.size()) {
+      String arg = args.get(pos);
+	  // stop if not an opt, or the stdin arg "-" is found
+      if (!arg.startsWith("-") || arg.equals("-")) { 
+		  // 옵션이 나온 후 다음 argment 가 있다면 
+		  if( !tmpOption.equals("") && optionPos == pos)
+		  {
+			optionsForFind.put(tmpOption, arg);
+			args.remove(pos);
+			optionPos = -1;
+			continue;
+		  }
+		  // 옵션이 나온 후 다음 argment 가 없다면
+		  else if( !tmpOption.equals("") && optionPos < pos)
+			throw new InvaildOptionException();
+		  else
+		  {
+			pos++;
+			continue;
+		  }
+      } else if (arg.equals("--")) { // force end of option processing
+        args.remove(pos);
+        break;
+      }
+      
+      String opt = arg.substring(1);
+      if (options.containsKey(opt)) {
+        options.put(opt, Boolean.TRUE);
+		tmpOption = opt;
+		optionPos = pos;
+		args.remove(pos);
+      } else if (ignoreUnknownOpts) {
+        pos++;
+      } else {
+        throw new UnknownOptionException(arg);
+      }
+    }
+
+	int psize = args.size();
+    if (psize < minPar) {
+      throw new NotEnoughArgumentsException(minPar, psize);
+    }
+    if (psize > maxPar) {
+      throw new TooManyArgumentsException(maxPar, psize);
+    }
+  }
+
   /** Return if the option is set or not
    * 
    * @param option String representation of an option
@@ -137,6 +190,10 @@ public class CommandFormat {
     return optSet;
   }
   
+  public Map<String, String> getOptionsForFind() {
+    return optionsForFind;
+  }
+
   /** Used when the arguments exceed their bounds 
    */
   public static abstract class IllegalNumberOfArgumentsException
@@ -201,6 +258,14 @@ public class CommandFormat {
     
     public String getOption() {
       return option;
+    }
+  }
+
+  public static class InvaildOptionException extends IllegalArgumentException {
+    private static final long serialVersionUID = 0L;
+   
+    public InvaildOptionException() {
+      super("Invaild option");
     }
   }
 }

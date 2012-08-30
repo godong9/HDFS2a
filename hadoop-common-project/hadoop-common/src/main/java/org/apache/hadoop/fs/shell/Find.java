@@ -2,16 +2,16 @@ package org.apache.hadoop.fs.shell;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.shell.PathExceptions.PathNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.hadoop.util.StringUtils;
+
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.Path;
 
 public class Find extends FsCommand {
 	  
@@ -20,19 +20,14 @@ public class Find extends FsCommand {
 	  }
 
 	  public static final String NAME = "find";
-	  public static final String USAGE = "[option] [path] [filename] [option2]";
+	  public static final String USAGE = "[path...] [expression]";
 	  public static final String DESCRIPTION = "Find command\n";
 
-	  private boolean findflag = true;
-	  private String flag;
-	  private int argCnt;
-	  private int preDepth=0;
-	  private String[] expr;
-  
 	  protected int maxRepl = 3, maxLen = 10, maxOwner = 0, maxGroup = 0;
 	  protected String lineFormat;
 	  protected boolean dirRecurse;
 	  protected boolean humanReadable = false;
+	  protected Map<String, String> optionsForFind = new HashMap<String, String>();
 	  protected static final SimpleDateFormat dateFormat = 
 			    new SimpleDateFormat("yyyy-MM-dd HH:mm");  
 	  protected String formatSize(long size) {
@@ -43,139 +38,32 @@ public class Find extends FsCommand {
 	  
 	  @Override
 	  protected void processOptions(LinkedList<String> args) {
-		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "maxdepth", "size");
-	    cf.parse(args); 
-	    String[] opts = cf.getOpts().toArray(new String[0]);
-	    switch (opts.length) {
-	      case 0:
-	        throw new IllegalArgumentException("No find flag given");
-	      case 1:
-	    	 flag = opts[0];
-	    	 dirRecurse = !cf.getOpt("d");	//Recurse Check
-	    	 setRecursive(dirRecurse);
-	    	 argCnt=args.size()-1;
-	    	 //Calculate preDepth
-	    	 String argPath = args.get(0);
-	    	 StringTokenizer stk = new StringTokenizer(argPath,"/");
-	    	 preDepth=stk.countTokens();	
-	  	 
-	    	 expr=new String[argCnt];
-	    	 for(int i=0; i<(args.size()-1); i++){
-	    		 expr[i] = args.get(i+1);
-	    	 }	 
-		     break;
-	      default:
-	        throw new IllegalArgumentException("Only one find flag is allowed");
-	    }
+		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "type", "atime", "ctime", "mtime", "print", "depth", "owner", "group", "perm", "maxdepth", "size");
+		cf.parseForFind(args);
+		optionsForFind = cf.getOptionsForFind();
+		if (args.isEmpty()) args.add(Path.CUR_DIR);
 	  }
-	  
-	  @Override
-	  protected List<PathData> expandArgument(String arg) throws IOException {
-		PathData[] items = PathData.expandAsGlob(arg, getConf());
-		/*
-		if (items.length == 0) {
-		// it's a glob that failed to match
-		  throw new PathNotFoundException(arg);
-		}*/
-		return Arrays.asList(items);
-	  }
-	  
+
 	  @Override
 	  protected void processPathArgument(PathData item) throws IOException {
-	    // implicitly recurse once for cmdline directories
-	    if (dirRecurse && item.stat.isDirectory()) {	
-	      recursePath(item);	//If recurse possible, recursePath set
-	    } else {
-	      super.processPathArgument(item);
-	    }
+		PathData[] items = PathData.expandAsGlob(item.toString(), getConf());
+		processPaths(null, items);
 	  }
 	  
 	  @Override
-	  protected void processNonexistentPath(PathData item) throws IOException {
-		 if(!findflag){
-			 displayError(new PathNotFoundException(item.toString()));
-			 exitCode = 1;
-		 }
-	  }
-	 
-	  @Override
-	  protected void processPaths(PathData parent, PathData ... items)
-	  throws IOException {
-	    adjustColumnWidths(items);
-	    super.processPaths(parent, items);
-	  }
-	    
-	  @Override
-	  protected void processPath(PathData item) {
-	   if(flag.equals("name")){
-		   FileStatus stat = item.stat;
-		       String tmpString = item.toString(); 	       
-		       int tmpNum = tmpString.lastIndexOf("/");
-		       tmpString = tmpString.substring(tmpNum+1);       
-		       //Java Regular Expression Matching
-		       Pattern pt = Pattern.compile(expr[0]);
-		       Matcher m = pt.matcher(tmpString);
-		   
-			   if(m.lookingAt()){
-			    	String line = String.format(lineFormat,
-			    	        (stat.isDirectory() ? "d" : "-"),
-			    	        stat.getPermission(),
-			    	        (stat.isFile() ? stat.getReplication() : "-"),
-			    	        stat.getOwner(),
-			    	        stat.getGroup(),
-			    	        formatSize(stat.getLen()),
-			    	        dateFormat.format(new Date(stat.getModificationTime())),
-			    	        item
-			    	   );
-			    	   System.out.println(line);
-			    }
-	       exitCode = 1;
-	    }
-	    else if(flag.equals("maxdepth")){
-	    	FileStatus stat = item.stat;
-	    	int setDepth=new Integer(expr[1]);
-	    	String tmpPath = item.toString();
-	    	
-	    	//Count depth
-	    	StringTokenizer stk = new StringTokenizer(tmpPath,"/");
-	    	int tmpDepth=stk.countTokens();	
-
-	    	//Add preDepth
-	    	setDepth=setDepth+preDepth;	
-	    	
-	    	String tmpString = item.toString(); 	       
-		    int tmpNum = tmpString.lastIndexOf("/");
-		    tmpString = tmpString.substring(tmpNum+1);       
-		    //Java Regular Expression Matching
-		    Pattern pt = Pattern.compile(expr[0]);
-		    Matcher m = pt.matcher(tmpString);
-	    	
-	    	if(tmpDepth<=setDepth){	
-			   if(m.lookingAt()){
-			    	String line = String.format(lineFormat,
-			    	        (stat.isDirectory() ? "d" : "-"),
-			    	        stat.getPermission(),
-			    	        (stat.isFile() ? stat.getReplication() : "-"),
-			    	        stat.getOwner(),
-			    	        stat.getGroup(),
-			    	        formatSize(stat.getLen()),
-			    	        dateFormat.format(new Date(stat.getModificationTime())),
-			    	        item
-			    	   );
-			    	   System.out.println(line);
-			    }
-	    	}
-	       exitCode = 1;
-	    }
-	    else if(flag.equals("size")){
-	        System.out.println(String.format("Find size"));
-	        exitCode = 1;
-	    }
-	    else{
-	    	System.out.println(String.format("Flag Input Error!"));
-	    	findflag=false;
-	    }
-	    if (!findflag) exitCode = 1;
+	  protected void processPath(PathData item) throws IOException {
+		FileStatus stat = item.stat;
+		String line = String.format(lineFormat,
+			(stat.isDirectory() ? "d" : "-"),
+			stat.getPermission(),
+			(stat.isFile() ? stat.getReplication() : "-"),
+			stat.getOwner(),
+			stat.getGroup(),
+			formatSize(stat.getLen()),
+			dateFormat.format(new Date(stat.getModificationTime())),
+			item
+		);
+		out.println(line);
 	  }
 	   
 	  private void adjustColumnWidths(PathData items[]) {
