@@ -46,7 +46,7 @@ public class Find extends FsCommand {
 	  
 	  @Override
 	  protected void processOptions(LinkedList<String> args) {
-		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "type", "atime", "ctime", "mtime", 
+		CommandFormat cf = new CommandFormat(1, Integer.MAX_VALUE, "name", "type", "atime", "mtime", 
 										"print", "depth", "owner", "group", "perm", "maxdepth", "size");
 		cf.parseForFind(args);
 		optionsForFind = cf.getOptionsForFind();
@@ -123,6 +123,10 @@ public class Find extends FsCommand {
 		}
 
 		if(findFlag && optionsForFind.containsKey("atime")){
+			exitCode = 0;
+		}
+
+		if(findFlag && optionsForFind.containsKey("mtime")){
 			exitCode = 0;
 		}
 
