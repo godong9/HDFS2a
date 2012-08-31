@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.util.StringUtils;
@@ -46,8 +47,74 @@ public class Find extends FsCommand {
 
 	  @Override
 	  protected void processPathArgument(PathData item) throws IOException {
-		PathData[] items = PathData.expandAsGlob(item.toString(), getConf());
+		String patten;
+		ArrayList<PathData> tmpPathData = new ArrayList<PathData>();
+		PathData[] items;
+
+		if ( optionsForFind.containsKey("name") )
+		{
+			System.out.println("nameOption : " + optionsForFind.get("name"));
+			items = PathData.expandAsGlob(optionsForFind.get("name"), getConf());
+			for (PathData i : items) {
+				System.out.println("Not Matches items : " + i.toString());
+				if( i.toString().matches( "^" + item.toString() ) )
+				{
+					System.out.println("Matches items : " + i.toString());
+					tmpPathData.add(i);
+				}
+			}
+			/*
+			// 경로가 디렉토리일 경우, 디렉토리 안에서 파일 검색을 한다.
+			if( item.stat.isDirectory() )
+			{
+				patten = item.toString() + "/" + optionsForFind.get("name");
+				System.out.println("patten : " + patten);
+				items = PathData.expandAsGlob(patten, getConf());
+			}
+			// 경로가 디렉토리가 아닐 경우, 경로와 찾을려는 문자열과 비교한다.
+			else if( item.toString().matches(optionsForFind.get("name")) )
+				items[0] = item;
+			// 경로가 디렉토리가 아니고, 디렉토리가 아니면서 찾으려는 문자열과 다르다면 찾지 못하였다.
+			else
+				return;
+			*/
+		}
+		else
+		{
+			tmpPathData.add(item);
+		}
+
+		items = tmpPathData.toArray(new PathData[tmpPathData.size()]);
+
+		if( items.length > 0 )
+	    {
+			for (PathData it : items) {
+				System.out.println("items : " + it.toString());
+			}
+		}
+
 		processPaths(null, items);
+	  }
+
+	  @Override
+	  protected void processPaths(PathData parent, PathData ... items)
+	  throws IOException {
+		if (items.length != 0) {
+		  out.println("Found " + items.length + " items");
+		}
+		adjustColumnWidths(items);
+
+		if ( optionsForFind.containsKey("name") )
+		{
+			for (PathData item : items) {
+				processPath(item);
+			}
+		}
+		else
+		{
+			recursive = true;
+			super.processPaths(parent, items);
+		}
 	  }
 	  
 	  @Override
