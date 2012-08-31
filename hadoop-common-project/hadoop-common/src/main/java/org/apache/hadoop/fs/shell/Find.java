@@ -15,6 +15,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.shell.PathExceptions.PathNotFoundException;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.GlobFilter;
 
 public class Find extends FsCommand {
 	  
@@ -26,13 +27,11 @@ public class Find extends FsCommand {
 	  public static final String USAGE = "[path...] [expression]";
 	  public static final String DESCRIPTION = "Find command\n";
 
-	  private boolean findflag = true;
 	  private String flag;
 	  private int preDepth=0;
   
 	  protected int maxRepl = 3, maxLen = 10, maxOwner = 0, maxGroup = 0;
 	  protected String lineFormat;
-	  protected boolean dirRecurse;
 	  protected boolean humanReadable = false;
 	  protected Map<String, String> optionsForFind = new HashMap<String, String>();
 	  
@@ -58,39 +57,19 @@ public class Find extends FsCommand {
 		StringTokenizer stk = new StringTokenizer(argPath,"/");
 		preDepth=stk.countTokens()-1;
 	
-		dirRecurse = !cf.getOpt("d");
-		setRecursive(dirRecurse);
-	  }
-	  
-	  @Override
-	  protected List<PathData> expandArgument(String arg) throws IOException {
-		PathData[] items = PathData.expandAsGlob(arg, getConf());
-		/*
-		if (items.length == 0) {
-		// it's a glob that failed to match
-		  throw new PathNotFoundException(arg);
-		}*/
-		return Arrays.asList(items);
+		setRecursive(true);
 	  }
 	  
 	  @Override
 	  protected void processPathArgument(PathData item) throws IOException {
 	    // implicitly recurse once for cmdline directories
-	    if (dirRecurse && item.stat.isDirectory()) {	
+	    if (item.stat.isDirectory()) {	
 	      recursePath(item);	//If recurse possible, recursePath set
 	    } else {
 	      super.processPathArgument(item);
 	    }
 	  }
 	  
-	  @Override
-	  protected void processNonexistentPath(PathData item) throws IOException {
-		 if(!findflag){
-			 displayError(new PathNotFoundException(item.toString()));
-			 exitCode = 1;
-		 }
-	  }
-	 
 	  @Override
 	  protected void processPaths(PathData parent, PathData ... items)
 	  throws IOException {
@@ -99,47 +78,78 @@ public class Find extends FsCommand {
 	  }
 	    
 	  @Override
-	  protected void processPath(PathData item) {
-		  //
-		  
+	  protected void processPath(PathData item) throws IOException {
+		
+		boolean findflag = false;
+		FileStatus stat = item.stat;
+		boolean isDirectory = false;
+		boolean isFile = false;
+		String fileType;
+		String filePermission = stat.getPermission().toString();
+		String fileOwner = stat.getOwner();
+		String fileGroup = stat.getGroup();
+		long mTime = stat.getModificationTime();
+
+		if( stat.isDirectory() )
+		{
+			fileType = "d";
+			isDirectory = true;
+		}
+		else if( stat.isFile() )
+		{
+			fileType = "f";
+			isFile = true;
+		}
+		else
+			fileType = "-";
+
 		if(optionsForFind.containsKey("name")){
-		   FileStatus stat = item.stat;
-		   	
-		       String tmpString = item.toString(); 	
-		       //System.out.println("tmpString:"+tmpString);
-		       int tmpNum = tmpString.lastIndexOf("/");
-		       tmpString = tmpString.substring(tmpNum+1);       
-		       //Java Regular Expression Matching
-		       String optString = optionsForFind.get("name").toString();
-		       //System.out.println("optString:"+optString);
-		       Pattern pt = Pattern.compile(optString);
-		       Matcher m = pt.matcher(tmpString);
-		   
-			   if(m.lookingAt()){
-			    	String line = String.format(lineFormat,
-			    	        (stat.isDirectory() ? "d" : "-"),
-			    	        stat.getPermission(),
-			    	        (stat.isFile() ? stat.getReplication() : "-"),
-			    	        stat.getOwner(),
-			    	        stat.getGroup(),
-			    	        formatSize(stat.getLen()),
-			    	        dateFormat.format(new Date(stat.getModificationTime())),
-			    	        item
-			    	   );
-			    	   System.out.println(line);
-			    }
-	       exitCode = 1;
-	     }
-	     else if(optionsForFind.containsKey("type")){
-		   
-	       exitCode = 1;
-	     }
-	     else if(optionsForFind.containsKey("atime")){
-			  
-		   exitCode = 1;
-		 }
-	     else if(optionsForFind.containsKey("maxdepth")){
-	    	FileStatus stat = item.stat;
+			String optString = optionsForFind.get("name");
+			// HDFS 에서 제공하는 패턴 체크 함수로 비교
+			GlobFilter fp = new GlobFilter(optString);
+			if( fp.accept(item.path) )
+				findflag = true;
+			else
+				findflag = false;
+		}
+
+		if(optionsForFind.containsKey("type")){
+			String optString = optionsForFind.get("type");
+			if( optString.equals(fileType) )
+				findflag = true;
+			else
+				findflag = false;
+		}
+
+		if(optionsForFind.containsKey("atime")){
+			exitCode = 0;
+		}
+
+		if(optionsForFind.containsKey("owner")){
+			String optString = optionsForFind.get("owner");
+			if( optString.equals(fileOwner) )
+				findflag = true;
+			else
+				findflag = false;
+		}
+
+		if(optionsForFind.containsKey("group")){
+			String optString = optionsForFind.get("group");
+			if( optString.equals(fileGroup) )
+				findflag = true;
+			else
+				findflag = false;
+		}
+
+		if(optionsForFind.containsKey("perm")){
+			String optString = optionsForFind.get("perm");
+			if( filePermission.indexOf(optString) != -1 )
+				findflag = true;
+			else
+				findflag = false;
+		}
+
+		if(optionsForFind.containsKey("maxdepth")){
 	    	int setDepth=new Integer(optionsForFind.get("maxdepth"));
 	    	//System.out.println("setDepth: "+setDepth);
 	    	String tmpPath = item.toString();
@@ -156,33 +166,38 @@ public class Find extends FsCommand {
 		    int tmpNum = tmpString.lastIndexOf("/");
 		    tmpString = tmpString.substring(tmpNum+1);       
 		    //Java Regular Expression Matching
-	
+
 		    //Pattern pt = Pattern.compile(optString);
 		    //Matcher m = pt.matcher(tmpString);
 	    	
-	    	if(tmpDepth<=setDepth){	
-			   //if(m.lookingAt()){
-			    	String line = String.format(lineFormat,
-			    	        (stat.isDirectory() ? "d" : "-"),
-			    	        stat.getPermission(),
-			    	        (stat.isFile() ? stat.getReplication() : "-"),
-			    	        stat.getOwner(),
-			    	        stat.getGroup(),
-			    	        formatSize(stat.getLen()),
-			    	        dateFormat.format(new Date(stat.getModificationTime())),
-			    	        item
-			    	   );
-			    	   System.out.println(line);
-			    //}
-	    	}
-	        exitCode = 1;
-	     }
-	     else if(flag.equals("size")){
-	        System.out.println(String.format("Find size"));
-	        exitCode = 1;
-	     }
+	    	if(tmpDepth<=setDepth)
+				findflag = true;
+			else
+				findflag = false;
+	    }
+
+		if(optionsForFind.containsKey("size")){
+			System.out.println(String.format("Find size"));
+			exitCode = 0;
+		}
 		
-	     if (!findflag) exitCode = 1;
+		if(optionsForFind.isEmpty())
+			findflag = true;
+
+		if( findflag )
+		{
+			String line = String.format(lineFormat,
+				(isDirectory ? "d" : "-"),
+				filePermission,
+				(isFile ? stat.getReplication() : "-"),
+				fileOwner,
+				fileGroup,
+				formatSize(stat.getLen()),
+				dateFormat.format(new Date(mTime)),
+				item
+			);
+			System.out.println(line);
+		}
 	  }
 	   
 	  private void adjustColumnWidths(PathData items[]) {
