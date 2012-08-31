@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.lang.Boolean;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.shell.PathExceptions.PathNotFoundException;
 import org.apache.hadoop.util.StringUtils;
@@ -80,7 +81,7 @@ public class Find extends FsCommand {
 	  @Override
 	  protected void processPath(PathData item) throws IOException {
 		
-		boolean findflag = false;
+		boolean findFlag = true;
 		FileStatus stat = item.stat;
 		boolean isDirectory = false;
 		boolean isFile = false;
@@ -103,53 +104,53 @@ public class Find extends FsCommand {
 		else
 			fileType = "-";
 
-		if(optionsForFind.containsKey("name")){
+		if(findFlag && optionsForFind.containsKey("name")){
 			String optString = optionsForFind.get("name");
 			// HDFS 에서 제공하는 패턴 체크 함수로 비교
 			GlobFilter fp = new GlobFilter(optString);
 			if( fp.accept(item.path) )
-				findflag = true;
+				findFlag = findFlag && true;
 			else
-				findflag = false;
+				findFlag = false;
 		}
 
-		if(optionsForFind.containsKey("type")){
+		if(findFlag && optionsForFind.containsKey("type")){
 			String optString = optionsForFind.get("type");
 			if( optString.equals(fileType) )
-				findflag = true;
+				findFlag = findFlag && true;
 			else
-				findflag = false;
+				findFlag = false;
 		}
 
-		if(optionsForFind.containsKey("atime")){
+		if(findFlag && optionsForFind.containsKey("atime")){
 			exitCode = 0;
 		}
 
-		if(optionsForFind.containsKey("owner")){
+		if(findFlag && optionsForFind.containsKey("owner")){
 			String optString = optionsForFind.get("owner");
 			if( optString.equals(fileOwner) )
-				findflag = true;
+				findFlag = findFlag && true;
 			else
-				findflag = false;
+				findFlag = false;
 		}
 
-		if(optionsForFind.containsKey("group")){
+		if(findFlag && optionsForFind.containsKey("group")){
 			String optString = optionsForFind.get("group");
 			if( optString.equals(fileGroup) )
-				findflag = true;
+				findFlag = findFlag && true;
 			else
-				findflag = false;
+				findFlag = false;
 		}
 
-		if(optionsForFind.containsKey("perm")){
+		if(findFlag && optionsForFind.containsKey("perm")){
 			String optString = optionsForFind.get("perm");
 			if( filePermission.indexOf(optString) != -1 )
-				findflag = true;
+				findFlag = findFlag && true;
 			else
-				findflag = false;
+				findFlag = false;
 		}
 
-		if(optionsForFind.containsKey("maxdepth")){
+		if(findFlag && optionsForFind.containsKey("maxdepth")){
 	    	int setDepth=new Integer(optionsForFind.get("maxdepth"));
 	    	//System.out.println("setDepth: "+setDepth);
 	    	String tmpPath = item.toString();
@@ -171,20 +172,21 @@ public class Find extends FsCommand {
 		    //Matcher m = pt.matcher(tmpString);
 	    	
 	    	if(tmpDepth<=setDepth)
-				findflag = true;
+				findFlag = findFlag && true;
 			else
-				findflag = false;
+				findFlag = false;
 	    }
 
-		if(optionsForFind.containsKey("size")){
+		if(findFlag && optionsForFind.containsKey("size")){
 			System.out.println(String.format("Find size"));
 			exitCode = 0;
 		}
 		
+		// 사용자가 작성한 옵션이 없을때
 		if(optionsForFind.isEmpty())
-			findflag = true;
+			findFlag = true;
 
-		if( findflag )
+		if( findFlag )
 		{
 			String line = String.format(lineFormat,
 				(isDirectory ? "d" : "-"),
